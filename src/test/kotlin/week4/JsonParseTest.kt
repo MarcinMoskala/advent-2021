@@ -86,7 +86,7 @@ class JsonParseTest {
                     JsonString("C"),
                 )
             ),
-            parseJson("""{"o":{"a":"AAA","b":123.45,"c":true,"d":false,"e":null}}""")
+            parseJson("""{"letters":["A", "B", "C"]}""")
         )
     }
 
@@ -120,12 +120,7 @@ class JsonParseTest {
     @Test
     fun `should parse stringified object`() {
         val jsonElements = listOf(
-            JsonNumber(1.23),
             JsonObject("name" to JsonString("This is some string")),
-            JsonArray(
-                JsonObject("name" to JsonString("Marcin")),
-                JsonObject("name" to JsonString("Maja")),
-            ),
             JsonObject(
                 "a" to JsonArray(
                     JsonObject("name" to JsonString("Marcin")),
@@ -134,7 +129,9 @@ class JsonParseTest {
             )
         )
         for (jsonElement in jsonElements) {
-            assertEquals(jsonElement, parseJson(jsonElement.stringify()))
+            val text = jsonElement.stringify()
+            val parsed = parseJson(text)
+            assertEquals(jsonElement, parsed)
         }
     }
 
