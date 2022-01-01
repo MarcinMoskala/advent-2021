@@ -38,17 +38,45 @@ open class KMeansSolver<P : Any>(
         points: List<P>,
         dictSize: Int,
         threshold: Double = 0.0001
-    ): List<P> = TODO()
+    ): List<P> {
+        var means = createInitialDictionary(points, dictSize)
+        var prevError: Double = calculateError(points, means)
+        while (true) {
+            means = nextMeans(points, means)
+            val error = calculateError(points, means)
+            if (error + threshold >= prevError) return means
+            prevError = error
+        }
+    }
 
-    // Calculates the error of the dataset, that is the sum of distances to the closest dictionary points
-    protected open fun calculateError(points: List<P>, means: List<P>): Double = TODO()
+    protected open fun calculateError(points: List<P>, means: List<P>): Double {
+        val closestMean = points.map { p -> closestMean(p, means) }
+        val error = (points zip closestMean).sumOf { (p, q) -> distanceBetween(p, q) }
+        return error
+    }
 
-    // Calculates the next positions of the dictionary points
-    protected open fun nextMeans(points: List<P>, means: List<P>): List<P> = TODO()
+    protected open fun nextMeans(points: List<P>, means: List<P>): List<P> {
+        val grouped = grouped(points, means)
+        val newMeans = grouped.map { (_, group) -> calculateAveragePosition(group) }
+        val meansWithoutPoints: List<P> = (means elementMinus grouped.keys)
+        return newMeans + meansWithoutPoints.moveToClosestPointUntaken(points, newMeans)
+    }
 
-    // Group points by the dictionary points representing categories
-    fun grouped(dictionary: List<P>, means: List<P>): Map<P, List<P>> = TODO()
+    fun grouped(points: List<P>, means: List<P>) =
+        points.groupBy { point -> closestMean(point, means) }
 
     protected fun closestMean(point: P, means: List<P>): P =
         means.minByOrNull { mean -> distanceBetween(point, mean) }!!
+
+    // Improvement: For mean without points, move to closest untaken point
+    private fun List<P>.moveToClosestPointUntaken(points: List<P>, newMeans: List<P>): List<P> {
+        val untakenPoints = points - newMeans
+        return map { m -> untakenPoints.minByOrNull { p -> distanceBetween(p, m) }!! }
+    }
+}
+
+private infix fun <P> List<P>.elementMinus(another: Iterable<P>): List<P> {
+    val list = toMutableList()
+    for (e in another) list.remove(e)
+    return list
 }
